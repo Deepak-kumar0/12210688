@@ -20,7 +20,6 @@ export default function ShortenedResults ({ results }) {
                   <a 
                     href={`${window.location.origin}/s/${result.shortcode}`} 
                     target="_blank" 
-                    rel="noopener noreferrer"
                     className="short-link break-all"
                   >
                     {window.location.origin}/s/{result.shortcode}

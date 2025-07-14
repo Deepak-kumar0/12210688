@@ -11,6 +11,7 @@ function App() {
     <Routes>
         <Route path="/" element={<Home/>}></Route>
          <Route path="/s/:shortcode" element={<ShortLinkRedirector/>} />
+         <Route path='/*' element={<p>Page Not Found</p>}/>
     </Routes>
     </BrowserRouter>
   </div>  

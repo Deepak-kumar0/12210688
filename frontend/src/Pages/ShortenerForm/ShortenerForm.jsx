@@ -7,243 +7,240 @@ import isValidShortcode from "../../utils/isValidShortCode";
 import shortenUrl from "../../utils/shortenUrl";
 import ShortenedResults from "../ShortenedResult/ShortenedResult";
 
+function ShortenerForm() {
+  const [urlInputs, setUrlInputs] = useState([
+    { id: 1, longUrl: '', validity: '', shortcode: '' }
+  ]);
+  const [formErrors, setFormErrors] = useState({});
+  const [shortResults, setShortResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [mainError, setMainError] = useState(null);
 
+  function handleInputChange(id, field, value) {
+    let updatedInputs = [];
+    for (let i = 0; i < urlInputs.length; i++) {
+      if (urlInputs[i].id === id) {
+        let newObj = { ...urlInputs[i] };
+        newObj[field] = value;
+        updatedInputs.push(newObj);
+      } else {
+        updatedInputs.push(urlInputs[i]);
+      }
+    }
+    setUrlInputs(updatedInputs);
 
-export default function ShortenerForm() {
-  const [urlsToShorten, setUrlsToShorten] = useState([{ id: 1, longUrl: '', validity: '', shortcode: '' }]);
-  const [errors, setErrors] = useState({});
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [submissionError, setSubmissionError] = useState(null);
+    if (formErrors[id] && formErrors[id][field]) {
+      let copyErrors = { ...formErrors };
+      delete copyErrors[id][field];
+      if (Object.keys(copyErrors[id]).length === 0) {
+        delete copyErrors[id];
+      }
+      setFormErrors(copyErrors);
+    }
+  }
 
-  const handleChange = (id, field, value) => {
-    const updatedUrls = urlsToShorten.map(url =>
-      url.id === id ? { ...url, [field]: value } : url
-    );
-    setUrlsToShorten(updatedUrls);
-    if (errors[id] && errors[id][field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[id][field];
-        if (Object.keys(newErrors[id]).length === 0) {
-          delete newErrors[id];
+  function addMoreUrlInput() {
+    if (urlInputs.length < MAX_URLS) {
+      let newId = Date.now();
+      setUrlInputs([...urlInputs, { id: newId, longUrl: '', validity: '', shortcode: '' }]);
+    }
+  }
+
+  function removeUrlInput(id) {
+    if (urlInputs.length > 1) {
+      let filtered = [];
+      for (let i = 0; i < urlInputs.length; i++) {
+        if (urlInputs[i].id !== id) {
+          filtered.push(urlInputs[i]);
         }
-        return newErrors;
-      });
+      }
+      setUrlInputs(filtered);
+
+      let copyErrors = { ...formErrors };
+      delete copyErrors[id];
+      setFormErrors(copyErrors);
     }
-  };
+  }
 
-  const addUrlInput = () => {
-    if (urlsToShorten.length < MAX_URLS) {
-      setUrlsToShorten([...urlsToShorten, { id: Date.now(), longUrl: '', validity: '', shortcode: '' }]);
-    }
-  };
-
-  const removeUrlInput = (id) => {
-    if (urlsToShorten.length > 1) {
-      setUrlsToShorten(urlsToShorten.filter(url => url.id !== id));
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[id];
-        return newErrors;
-      });
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    let formIsValid = true;
-
-    urlsToShorten.forEach(url => {
-      const entryErrors = {};
+  function validateForm() {
+    let errorsObj = {};
+    let isFormOk = true;
+    for (let i = 0; i < urlInputs.length; i++) {
+      let url = urlInputs[i];
+      let errorsForThis = {};
 
       if (!isValidUrl(url.longUrl)) {
-        entryErrors.longUrl = 'Invalid URL format.';
-        formIsValid = false;
+        errorsForThis.longUrl = "Invalid URL format.";
+        isFormOk = false;
       }
-      
       if (!isValidValidityPeriod(url.validity)) {
-        entryErrors.validity = 'Validity must be a positive integer (minutes).';
-        formIsValid = false;
+        errorsForThis.validity = "Validity must be a positive integer (minutes).";
+        isFormOk = false;
       }
-
       if (!isValidShortcode(url.shortcode)) {
-        entryErrors.shortcode = 'Invalid shortcode (alphanumeric, 4-15 chars).';
-        formIsValid = false;
+        errorsForThis.shortcode = "Invalid shortcode (alphanumeric, 4-15 chars).";
+        isFormOk = false;
       }
-
-      if (Object.keys(entryErrors).length > 0) {
-        newErrors[url.id] = entryErrors;
+      if (Object.keys(errorsForThis).length > 0) {
+        errorsObj[url.id] = errorsForThis;
       }
-    });
+    }
+    setFormErrors(errorsObj);
+    return isFormOk;
+  }
 
-    setErrors(newErrors);
-    return formIsValid;
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setResults([]);
-    setSubmissionError(null);
+  function handleSubmit(e) {
+    e.preventDefault();
+    setShortResults([]);
+    setMainError(null);
 
     if (!validateForm()) {
-      setSubmissionError('Please fix the validation errors.');
+      setMainError("Please fix the validation errors.");
       return;
     }
 
-    setLoading(true);
-    const newResults = [];
-    const errorsDuringProcessing = [];
+    setIsLoading(true);
+    let newResults = [];
+    let errorList = [];
 
-    urlsToShorten.forEach(url => {
-      const response = shortenUrl(
-        url.longUrl, 
-        url.validity ? parseInt(url.validity, 10) : null, 
+    for (let i = 0; i < urlInputs.length; i++) {
+      let url = urlInputs[i];
+      let result = shortenUrl(
+        url.longUrl,
+        url.validity ? parseInt(url.validity, 10) : null,
         url.shortcode || null
       );
-
-      if (response.success) {
-        newResults.push(response.data);
+      if (result.success) {
+        newResults.push(result.data);
       } else {
-        errorsDuringProcessing.push({ 
-          originalUrl: url.longUrl, 
-          error: response.error || 'Failed to shorten URL' 
+        errorList.push({
+          originalUrl: url.longUrl,
+          error: result.error || "Failed to shorten URL"
         });
       }
-    });
+    }
 
-    setResults(newResults);
-    setLoading(false);
+    setShortResults(newResults);
+    setIsLoading(false);
 
-    if (errorsDuringProcessing.length > 0) {
-      setSubmissionError(`Some URLs could not be shortened. Details: ${errorsDuringProcessing.map(e => e.error).join(', ')}`);
+    if (errorList.length > 0) {
+      let msg = "Some URLs could not be shortened. Details: ";
+      for (let i = 0; i < errorList.length; i++) {
+        msg += errorList[i].error;
+        if (i !== errorList.length - 1) msg += ", ";
+      }
+      setMainError(msg);
     }
 
     if (newResults.length > 0) {
-      setUrlsToShorten([{ id: Date.now(), longUrl: '', validity: '', shortcode: '' }]);
+      setUrlInputs([{ id: Date.now(), longUrl: '', validity: '', shortcode: '' }]);
     }
-  };
+  }
 
   return (
-    <div className="form-container">
-      <h1>URL Shortener</h1>
-      
-      <div className="form-card">
-        <h2>Shorten URLs (Up to {MAX_URLS} concurrently)</h2>
-
+    <div className="my-form-box">
+      <h1 className="my-title">URL Shortener</h1>
+      <div className="my-form-card">
+        <h2 className="my-form-subtitle">Shorten URLs (Up to {MAX_URLS})</h2>
         <form onSubmit={handleSubmit}>
-          {urlsToShorten.map((urlEntry, index) => (
-            <div key={urlEntry.id} className="url-input-group">
-              <div className="input-grid">
-                <div className="full-width-input">
-                  <label htmlFor={`longUrl-${urlEntry.id}`}>
-                    Original URL #{index + 1}
-                  </label>
+          {urlInputs.map((input, idx) => (
+            <div key={input.id} className="my-url-group">
+              <div className="my-inputs-grid">
+                <div className="my-full-row">
+                  <label htmlFor={`longUrl-${input.id}`}>Original URL #{idx + 1}</label>
                   <input
                     type="text"
-                    id={`longUrl-${urlEntry.id}`}
-                    className={`text-input ${
-                      errors[urlEntry.id] && errors[urlEntry.id].longUrl ? 'input-error' : ''
-                    }`}
-                    value={urlEntry.longUrl}
-                    onChange={(e) => handleChange(urlEntry.id, 'longUrl', e.target.value)}
+                    id={`longUrl-${input.id}`}
+                    className={`my-text-input ${formErrors[input.id] && formErrors[input.id].longUrl ? 'my-input-error' : ''}`}
+                    value={input.longUrl}
+                    onChange={e => handleInputChange(input.id, 'longUrl', e.target.value)}
                     required
-                    disabled={loading}
-                    placeholder="e.g., https://www.example.com/very/long/path"
+                    disabled={isLoading}
+                    placeholder="https://www.example.com/long/path"
                   />
-                  {errors[urlEntry.id] && errors[urlEntry.id].longUrl && (
-                    <p className="error-message">{errors[urlEntry.id].longUrl}</p>
+                  {formErrors[input.id] && formErrors[input.id].longUrl && (
+                    <p className="my-error-msg">{formErrors[input.id].longUrl}</p>
                   )}
                 </div>
                 <div>
-                  <label htmlFor={`validity-${urlEntry.id}`}>
-                    Validity (minutes, optional)
-                  </label>
+                  <label htmlFor={`validity-${input.id}`}>Validity (minutes, optional)</label>
                   <input
                     type="number"
-                    id={`validity-${urlEntry.id}`}
-                    className={`text-input ${
-                      errors[urlEntry.id] && errors[urlEntry.id].validity ? 'input-error' : ''
-                    }`}
-                    value={urlEntry.validity}
-                    onChange={(e) => handleChange(urlEntry.id, 'validity', e.target.value)}
-                    disabled={loading}
-                    placeholder="e.g., 60"
+                    id={`validity-${input.id}`}
+                    className={`my-text-input ${formErrors[input.id] && formErrors[input.id].validity ? 'my-input-error' : ''}`}
+                    value={input.validity}
+                    onChange={e => handleInputChange(input.id, 'validity', e.target.value)}
+                    disabled={isLoading}
+                    placeholder="60"
                   />
-                  {errors[urlEntry.id] && errors[urlEntry.id].validity ? (
-                    <p className="error-message">{errors[urlEntry.id].validity}</p>
+                  {formErrors[input.id] && formErrors[input.id].validity ? (
+                    <p className="my-error-msg">{formErrors[input.id].validity}</p>
                   ) : (
-                    <p className="helper-text">Default: 30 minutes</p>
+                    <p className="my-helper-msg">Default: 30 minutes</p>
                   )}
                 </div>
                 <div>
-                  <label htmlFor={`shortcode-${urlEntry.id}`}>
-                    Custom Shortcode (optional)
-                  </label>
+                  <label htmlFor={`shortcode-${input.id}`}>Custom Shortcode (optional)</label>
                   <input
                     type="text"
-                    id={`shortcode-${urlEntry.id}`}
-                    className={`text-input ${
-                      errors[urlEntry.id] && errors[urlEntry.id].shortcode ? 'input-error' : ''
-                    }`}
-                    value={urlEntry.shortcode}
-                    onChange={(e) => handleChange(urlEntry.id, 'shortcode', e.target.value)}
-                    disabled={loading}
-                    placeholder="e.g., mylink123"
+                    id={`shortcode-${input.id}`}
+                    className={`my-text-input ${formErrors[input.id] && formErrors[input.id].shortcode ? 'my-input-error' : ''}`}
+                    value={input.shortcode}
+                    onChange={e => handleInputChange(input.id, 'shortcode', e.target.value)}
+                    disabled={isLoading}
+                    placeholder="like mylink123"
                   />
-                  {errors[urlEntry.id] && errors[urlEntry.id].shortcode ? (
-                    <p className="error-message">{errors[urlEntry.id].shortcode}</p>
+                  {formErrors[input.id] && formErrors[input.id].shortcode ? (
+                    <p className="my-error-msg">{formErrors[input.id].shortcode}</p>
                   ) : (
-                    <p className="helper-text">Alphanumeric, 4-15 chars</p>
+                    <p className="my-helper-msg">Alphanumeric, 4-15 chars</p>
                   )}
                 </div>
               </div>
-              {urlsToShorten.length > 1 && (
-                <div className="remove-button-container">
-                  <button 
-                    type="button" 
-                    onClick={() => removeUrlInput(urlEntry.id)} 
-                    disabled={loading}
-                    className="remove-button"
+              {urlInputs.length > 1 && (
+                <div className="my-remove-btn-row">
+                  <button
+                    type="button"
+                    onClick={() => removeUrlInput(input.id)}
+                    disabled={isLoading}
+                    className="my-remove-btn"
                   >
-                    Remove URL
+                    Remove
                   </button>
                 </div>
               )}
             </div>
           ))}
-
-          <div className="form-actions">
-            <button 
-              type="button" 
-              onClick={addUrlInput} 
-              disabled={urlsToShorten.length >= MAX_URLS || loading}
-              className="add-url-button"
+          <div className="my-form-actions">
+            <button
+              type="button"
+              onClick={addMoreUrlInput}
+              disabled={urlInputs.length >= MAX_URLS || isLoading}
+              className="my-add-btn"
             >
-              <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-              Add URL
+              + Add URL
             </button>
-            <button 
-              type="submit" 
-              className="submit-button"
-              disabled={loading}
+            <button
+              type="submit"
+              className="my-submit-btn"
+              disabled={isLoading}
             >
-              {loading ? 'Shortening...' : 'Shorten URLs'}
+              {isLoading ? "Shortening..." : "Shorten URLs"}
             </button>
           </div>
         </form>
-
-        {submissionError && (
-          <div className="alert-error" role="alert">
-            <strong>Error!</strong>
-            <span> {submissionError}</span>
+        {mainError && (
+          <div className="my-error-alert">
+            <b>Error!</b>
+            <span> {mainError}</span>
           </div>
         )}
       </div>
-
-      {results.length > 0 && (
-        <ShortenedResults results={results} />
+      {shortResults.length > 0 && (
+        <ShortenedResults results={shortResults} />
       )}
     </div>
   );
-};
+}
+
+export default ShortenerForm;
