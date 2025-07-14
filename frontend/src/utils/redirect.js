@@ -1,4 +1,5 @@
 
+import log from "../../../loggingMiddleware";
 import loadUrls from "./loadUrls";
 import saveUrls from "./saveUrls";
 
@@ -36,7 +37,7 @@ function recordClickAndRedirect(shortcode) {
   foundUrl.clickData.push(clickInfo);
 
   saveUrls(allUrls);
-
+  log({stack: "frontend",level:"redirection",pack: "pages", message: "Redirect successfully"});
   return foundUrl.originalUrl;
 }
 
