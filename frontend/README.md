@@ -1,12 +1,103 @@
-# React + Vite
+# URL Shortener Web App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project is a user-friendly URL Shortener application built with React, designed to provide core URL shortening functionality and display analytical insights. The application manages all features client-side, with API interactions for core functionalities.
 
-Currently, two official plugins are available:
+-----
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Table of Contents
 
-## Expanding the ESLint configuration
+  * [Features](https://www.google.com/search?q=%23features)
+  * [Technical Specifications](https://www.google.com/search?q=%23technical-specifications)
+  * [Getting Started](https://www.google.com/search?q=%23getting-started)
+  * [Usage](https://www.google.com/search?q=%23usage)
+  * [Pages](https://www.google.com/search?q=%23pages)
+  * [Error Handling](https://www.google.com/search?q=%23error-handling)
+  * [Styling](https://www.google.com/search?q=%23styling)
+  
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+-----
+
+## Features
+
+  * **URL Shortening**: Shorten long URLs into concise, manageable links.
+  * **Custom Shortcodes**: Users can provide preferred custom shortcodes.
+  * **Default Validity**: Shortened URLs default to a 30-minute validity if not specified.
+  * **Redirection**: Seamlessly redirects users from shortened URLs to their original destinations.
+  * **Client-Side Validation**: Robust validation of user inputs before API calls.
+  * **URL Shortener Statistics**: View detailed statistics for each shortened URL, including click data and geographical location.
+  * **Concurrency**: Shorten up to 5 URLs concurrently on the main page.
+
+-----
+
+## Technical Specifications
+
+  * **Application Architecture**: Developed as a **React application**.
+  * **Running Environment**: The application must run exclusively on `http://localhost:3000`.
+  * **Short Link Uniqueness**: All generated short links within the application are unique. The application manages this uniqueness.
+  * **Redirection**: Client-side routing and management of URL mappings.
+
+-----
+
+## Getting Started
+
+To get a local copy up and running, follow these simple steps.
+
+### Prerequisites
+
+  * Node.js and npm (or yarn)
+  * The Logging Middleware created in the Pre-Test Setup stage.
+
+### Installation
+
+1.  Clone the repository:
+    ```bash
+    git clone <repository_url>
+    ```
+2.  Navigate to the project directory:
+    ```bash
+    cd 12210688
+    ```
+3.  Install dependencies:
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
+
+-----
+
+## Usage
+
+To run the application:
+
+```bash
+npm start
+# or
+yarn start
+```
+
+The application will be accessible at `http://localhost:3000`.
+
+-----
+
+## Pages
+
+The application consists of the following pages:
+
+### URL Shortener Page
+
+  * **Functionality**: Allows users to shorten up to 5 URLs concurrently. For each URL, users can provide:
+      * The original long URL.
+      * An optional validity period (in minutes).
+      * An optional preferred shortcode.
+  * **Client-Side Validation**: Inputs are validated based on constraints (e.g., valid URL format, validity as an integer) prior to API calls.
+  * **Display Results**: Upon successful creation, shortened links and their respective expiry dates are clearly displayed, associated with each original URL.
+
+
+-----
+
+## Error Handling
+
+  * **Robust client-side error handling** is implemented.
+  * **User-friendly messages** are displayed for invalid inputs (e.g., malformed URL, shortcode collision) and other operational issues.
+
