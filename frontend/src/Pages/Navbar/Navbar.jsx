@@ -1,13 +1,13 @@
 import React from 'react'
-import Style from './Navbar.module.css';
+import './Navbar.css';
 
 export default function Navbar() {
   return (
-    <navbar>
+    <header>
        <nav>
          <a href="/">URL shortener</a>
          <a href="/statistics">Statistics</a>
        </nav>
-    </navbar>
+    </header>
   )
 }
